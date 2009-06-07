@@ -59,6 +59,9 @@ public:
 	void SetCdtVectorData();
 	void RegionGrowing(OFbkImageVectorData* imageVec);
 	bool InsideTrack(OFbkImageVectorData* imageVec, int topLine, int linesToCheck);
+	void Minefield();
+	void CalcGrid(int** pix_count, int thrs, int grids_x, int grids_y);
+	void Grid(OFbkImageVectorData* imageVec);
 
 private:
 	/** Oggetto per la gestione della primitiva del sensore di tatto

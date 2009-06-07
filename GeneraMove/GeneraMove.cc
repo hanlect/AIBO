@@ -8,10 +8,15 @@
 #include "EasyBMP_BMP.h"
 #include <iostream>
 #include <fstream>
+#include <math.h>
 
 
 //char* model="ERS7";
 typedef unsigned char BYTE;
+
+int grids_x = 4;
+int grids_y = 4;
+
 
 GeneraMove::GeneraMove(){
 
@@ -29,19 +34,18 @@ GeneraMove::GeneraMove(){
 	mMoveCommand.motion_cmd=Motion::MOTION_WALK_TROT;
 	mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
 	mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
-	mMoveCommand.head_lookat=vector3d(150,0,50);
+	mMoveCommand.head_lookat=vector3d(200,0,50);
 	mMoveCommand.vx = 100;
-	mMoveCommand.vy = 30;
-	mMoveCommand.va = 0;
+	mMoveCommand.vy = 0;
+	mMoveCommand.va = 0.05;
 
 	//
 	// Comando per metterlo in posizione di riposo
 	//
-	memset(&mStandCommand, 0, sizeof(mStandCommand));
-	mStandCommand.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
-	mStandCommand.head_cmd=Motion::HEAD_LOOKAT;
-	mStandCommand.tail_cmd=Motion::TAIL_NO_CMD;
-	mStandCommand.head_lookat=vector3d(150,0,50);
+//	memset(&mStandCommand, 0, sizeof(mStandCommand));
+//	mStandCommand.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+//	mStandCommand.head_cmd=Motion::HEAD_NO_CMD;
+//	mStandCommand.tail_cmd=Motion::TAIL_NO_CMD;
 
 	// Cammina
 
@@ -408,10 +412,10 @@ GeneraMove::SetCdtVectorData()
 	}
 
 	// numero di canali da usare
-	cdtVec->SetNumData(1);
+	cdtVec->SetNumData(2);
 
 	// setting della CDT per la palla
-/*	cdtPink = cdtVec->GetInfo(0);
+	cdtPink = cdtVec->GetInfo(0);
 	cdtPink->Init(fbkID, ocdtCHANNEL0);
 
 	//
@@ -449,57 +453,15 @@ GeneraMove::SetCdtVectorData()
 	cdtPink->Set(28, 230, 160, 190, 120);
 	cdtPink->Set(29, 230, 160, 190, 120);
 	cdtPink->Set(30, 230, 160, 190, 120);
-	cdtPink->Set(31, 230, 160, 190, 120);*/
+	cdtPink->Set(31, 230, 160, 190, 120);
 
 	// setting della CDT per il bordo grigio del tracciato
-	cdtGray = cdtVec->GetInfo(0);
-	cdtGray->Init(fbkID, ocdtCHANNEL0);
+	cdtGray = cdtVec->GetInfo(1);
+	cdtGray->Init(fbkID, ocdtCHANNEL1);
 
 	//
 	// cdtGray->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
 	//
-/*	cdtGray->Set( 0, 230, 150, 190, 120);
-	cdtGray->Set( 1, 230, 150, 190, 120);
-	cdtGray->Set( 2, 116, 98, 151, 121);
-	cdtGray->Set( 3, 117, 97, 155, 126);
-	cdtGray->Set( 4, 85, 78, 168, 160);
-	cdtGray->Set( 5, 230, 150, 190, 120);
-	cdtGray->Set( 6, 230, 150, 190, 120);
-	cdtGray->Set( 7, 230, 150, 190, 120);
-	cdtGray->Set( 8, 115, 101, 150, 132);
-	cdtGray->Set( 9, 113, 99, 146, 121);
-	cdtGray->Set(10, 112, 101, 147, 124);
-	cdtGray->Set(11, 116, 98, 151, 124);
-	cdtGray->Set(12, 117, 98, 155, 126);
-	cdtGray->Set(13, 109, 97, 155, 132);
-	cdtGray->Set(14, 99, 99, 151, 151);
-	cdtGray->Set(15, 99, 99, 154, 154);
-//	cdtGray->Set(16, 230, 150, 190, 120);
-	cdtGray->Set(17, 85, 78, 168, 163);
-//	cdtGray->Set(18, 230, 150, 190, 120);
-	cdtGray->Set(19, 84, 81, 166, 160);
-	cdtGray->Set(20, 230, 160, 190, 120);
-	cdtGray->Set(21, 230, 160, 190, 120);
-	cdtGray->Set(22, 230, 160, 190, 120);
-	cdtGray->Set(23, 230, 160, 190, 120);
-	cdtGray->Set(24, 230, 160, 190, 120);
-	cdtGray->Set(25, 230, 160, 190, 120);
-	cdtGray->Set(26, 230, 160, 190, 120);
-	cdtGray->Set(27, 230, 160, 190, 120);
-	cdtGray->Set(28, 230, 160, 190, 120);
-	cdtGray->Set(29, 230, 160, 190, 120);
-	cdtGray->Set(30, 230, 160, 190, 120);
-	cdtGray->Set(31, 230, 160, 190, 120);*/
-
-/*	cdtGray->Set( 5, 116, 114, 127, 124);
-	cdtGray->Set( 3, 119, 119, 131, 131);
-	cdtGray->Set( 7, 112, 108, 133, 127);
-	cdtGray->Set( 10, 107, 101, 145, 128);
-	cdtGray->Set( 9, 105, 105, 137, 137);
-	cdtGray->Set( 11, 111, 108, 128, 127);
-	cdtGray->Set( 8, 111, 111, 133, 133);
-	cdtGray->Set( 6, 112, 112, 133, 126);*/
-
 	cdtGray->Set( 0, 114, 83, 173, 150);
 	cdtGray->Set( 1, 114, 83, 173, 150);
 	cdtGray->Set( 2, 114, 83, 173, 150);
@@ -536,8 +498,8 @@ GeneraMove::SetCdtVectorData()
 
 
 	// setting della CDT per il bordo bianco del tracciato
-/*	cdtWhite = cdtVec->GetInfo(2);
-	cdtWhite->Init(fbkID, ocdtCHANNEL2);
+/*	cdtWhite = cdtVec->GetInfo(3);
+	cdtWhite->Init(fbkID, ocdtCHANNEL3);
 
 	//
 	// cdtWhite->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
@@ -663,4 +625,112 @@ GeneraMove::InsideTrack(OFbkImageVectorData* imageVec, int topLine, int linesToC
 	}
 
 	return isInside;
+}
+
+void
+GeneraMove::Minefield()
+{
+
+}
+
+void
+GeneraMove::CalcGrid(int** pix_count, int thrs, int width, int height)
+{
+	int step_x = width/grids_x;
+	int step_y = height/grids_y;
+
+	int x_rett = 0;
+	int y_rett = 0;
+
+	int grid_matrix[grids_x][grids_y];
+
+	for (int x=0; x<grids_x; x++)
+	{
+		for (int y=0; y<grids_y; y++)
+		{
+			if (pix_count[x][y] > thrs)
+				grid_matrix[x][y] = 0;
+			else
+				grid_matrix[x][y] = 100;
+		}
+	}
+}
+
+void
+GeneraMove::Grid(OFbkImageVectorData* imageVec)
+{
+	OFbkImageInfo* info = imageVec->GetInfo(ofbkimageLAYER_C);
+	byte*          data = imageVec->GetData(ofbkimageLAYER_C);
+
+	OFbkImage cdtImage(info, data, ofbkimageBAND_CDT);
+
+	int width = cdtImage.Width();
+	int height = cdtImage.Height();
+	int m = 0;
+	int n = 0;
+	int pix_count[grids_x][grids_y];
+	int grid_matrix[grids_x][grids_y];
+	int thrs = 150;
+
+	int x, y;
+
+	for (x=0; x < width; x++)
+	{
+		for (y=0; y < height; y++)
+		{
+			if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)	// canale del grigio/pista
+			{
+				m = (int) floor( (float) (x * grids_x) / (float) width );
+				n = (int) floor( (float) (y * grids_y) / (float) height );
+				pix_count[m][n]++;
+			}
+		}
+	}
+
+	//calc_grid
+	//int step_x = width/grids_x;
+	//int step_y = height/grids_y;
+	//int x_rett = 0;
+	//int y_rett = 0;
+
+	for (x=0; x < grids_x; x++)
+	{
+		for (y=0; y < grids_y; y++)
+		{
+			if (pix_count[x][y] > thrs)
+				grid_matrix[x][y] = 0;
+			else
+				grid_matrix[x][y] = 100;
+		}
+	}
+
+	//minefield
+	//int max_x = sizeof(grid_matrix[0]) / sizeof(int);
+	//int max_y = sizeof(grid_matrix) /sizeof(int);
+
+	for (y=0; y < grids_y; y++)
+	{
+		for (x=0; x < grids_x; x++)
+		{
+			if (grid_matrix[x][y] == 100)
+			{
+				if ((x+1 < grids_x) && (grid_matrix[x+1][y] != 100))
+					grid_matrix[x+1][y]+=1;
+                if ((y+1 < grids_y) && (grid_matrix[x][y+1] != 100))
+                    grid_matrix[x][y+1]+=1;
+                if ((x+1 < grids_x) && (y+1 < grids_y) && (grid_matrix[x+1][y+1] != 100))
+                    grid_matrix[x+1][y+1]+=1;
+                if ((y-1 > 0) && (x-1 > 0) && (grid_matrix[x-1][y-1] != 100))
+                    grid_matrix[x-1][y-1]+=1;
+                if ((y-1 > 0) && (grid_matrix[x][y-1] != 100))
+                    grid_matrix[x][y-1]+=1;
+                if ((x-1 > 0) && (grid_matrix[x-1][y] != 100))
+                    grid_matrix[x-1][y]+=1;
+                if ((y-1 > 0) && (x+1 < grids_x) && (grid_matrix[x+1][y-1] != 100))
+                    grid_matrix[x+1][y-1]+=1;
+                if ((x-1 > 0) && (y+1 < grids_y) && (grid_matrix[x-1][y+1] != 100))
+                    grid_matrix[x-1][y+1]+=1;
+			}
+		}
+	}
 }
