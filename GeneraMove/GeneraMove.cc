@@ -2,6 +2,7 @@
 #include <OPENR/OSyslog.h>
 #include <OPENR/core_macro.h>
 #include <OPENR/OPENRAPI.h>
+
 #include "entry.h"
 #include "../Motion/MotionInterface.h"
 #include "EasyBMP.h"
@@ -30,22 +31,13 @@ GeneraMove::GeneraMove(){
 
 	mMoveCommand.head_lookat=vector3d(200,0,50);*/
 
-	memset(&mMoveCommand, 0, sizeof(mMoveCommand));
-	mMoveCommand.motion_cmd=Motion::MOTION_WALK_TROT;
-	mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
-	mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
-	mMoveCommand.head_lookat=vector3d(200,0,50);
-	mMoveCommand.vx = 100;
-	mMoveCommand.vy = 0;
-	mMoveCommand.va = 0.05;
+
 
 	//
 	// Comando per metterlo in posizione di riposo
 	//
-//	memset(&mStandCommand, 0, sizeof(mStandCommand));
-//	mStandCommand.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
-//	mStandCommand.head_cmd=Motion::HEAD_NO_CMD;
-//	mStandCommand.tail_cmd=Motion::TAIL_NO_CMD;
+
+
 
 	// Cammina
 
@@ -113,23 +105,40 @@ OStatus GeneraMove::DoStart(const OSystemEvent& event){
 	//
 	// Inclino la testa verso il basso
 	//
+	Wait(static_cast<longword>(2000000000));
+	Wait(static_cast<longword>(2000000000));
+	Wait(static_cast<longword>(2000000000));
+	Wait(static_cast<longword>(2000000000));
+	Wait(static_cast<longword>(2000000000));
+	Motion::MotionCommand mMoveCommand;
+	memset(&mMoveCommand, 0, sizeof(mMoveCommand));
+
+	mMoveCommand.motion_cmd=Motion::MOTION_WALK_TROT;
+	mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
+	mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
+	mMoveCommand.head_lookat=vector3d(150,0,50);
+	mMoveCommand.vx = 100;
+	mMoveCommand.vy = 0;
+	mMoveCommand.va = 0.05;
 	subject[sbjMotionControl]->SetData(&mMoveCommand,sizeof(Motion::MotionCommand));
 	subject[sbjMotionControl]->NotifyObservers();
 
-//	subject[sbjMotionControl]->SetData(&mWalkCommand,sizeof(Motion::MotionCommand));
-//	subject[sbjMotionControl]->NotifyObservers();
+	Wait(static_cast<longword>(2000000000));
+	Wait(static_cast<longword>(2000000000));
+	Wait(static_cast<longword>(2000000000));
+	Wait(static_cast<longword>(2000000000));
+	Wait(static_cast<longword>(2000000000));
 
 
-	//
-	// Avvio un timer con scadenza 200 msec
-	//
-	int dummy=0;
-	EventID sincroEvent = EventID();
-	RelativeTime period(0, 200);
-	TimeEventInfoWithRelativeTime timeInfo(TimeEventInfo::NonPeriodic, period);
-	sError error=SetTimeEvent(&timeInfo,myOID_,Extra_Entry[entryTimerEnd],&dummy,sizeof(dummy),&sincroEvent);
-	if(error!=sSUCCESS)
-		OSYSLOG1((osyslogERROR, "::DoStart() : ERROR: Sincronization Timer not started\n"));
+	memset(&mMoveCommand, 0, sizeof(mMoveCommand));
+	mMoveCommand.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+	mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
+	mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
+	mMoveCommand.head_lookat=vector3d(150,0,50);
+	subject[sbjMotionControl]->SetData(&mMoveCommand,sizeof(Motion::MotionCommand));
+	subject[sbjMotionControl]->NotifyObservers();
+
+	//Walk();
 
 	return oSUCCESS;
 }  //DoStart() END
@@ -156,208 +165,47 @@ OStatus GeneraMove::DoDestroy(const OSystemEvent& event){
 	return oSUCCESS;
 }  //DoDestroy() END
 
-/** Metodo invocato allo scadere del timer.*/
-void GeneraMove::TimerEnd(void* msg){
+void GeneraMove::Walk()
+{
 
-
-	//
-	// Leggo il valore del sensore posteriore.
-	//
-	OSensorValue sensorValue;
-	OPENR::GetSensorValue(mBackrID, &sensorValue);
-
-	//
-	// Se il sensore e' stato toccato
-	//
-	if(sensorValue.value >= 14)
+	Motion::MotionCommand mMoveCommand;
+	memset(&mMoveCommand, 0, sizeof(mMoveCommand));
+	int i = 0;
+	while (i < 10)
 	{
-		OSYSDEBUG(("Sensore toccato.\n"));
-
-		char dir[128];
-		char name[128];
-		sph = 0;
-
-		strcpy( dir , "/MS/OPEN-R/MW/DATA/P/" );
-		sprintf(name, "%sLAYM%d.BMP", dir, count);
-		mBMP->SaveYCrCb2RGB(name, imageVec, ofbkimageLAYER_M);
-		//mBMP->SaveLayerC(dir, imageVec);
-		mBMP->SaveLayerCmod(dir, imageVec, count);
-		mBMP->SaveLayerCcolors(dir, imageVec, count);
-
-		sph = 1;
-
-		OSYSDEBUG(("Immagini salvate.\n"));
-
-		//
-		// region growing algorithm
-		//
-//		RegionGrowing(imageVec);
+		int** grid_matrix = Grid(imageVec);
 
 
 
-		// declare and read the bitmap
-/*		eBMP Image, ImageTemp;
-		sprintf(name, "/MS/OPEN-R/MW/DATA/P/LAYC%d.BMP", count);
-		Image.ReadFromFile( name );
-		ImageTemp.ReadFromFile( name );
-
-		// prima passata - espansione
-		// se un pixel ha colore target, coloro i pixel adiacenti dello stesso colore
-		for( int i=1 ; i < Image.TellWidth()-1 ; i++)
+		if (grid_matrix[3][1] < 3)
 		{
-			for( int j=1 ; j < Image.TellHeight()-1 ; j++)
-			{
-				if (Image(i,j)->Red == 255)
-				{
-					ImageTemp(i-1,j-1)->Red = ImageTemp(i,j-1)->Red = ImageTemp(i+1,j-1)->Red =
-						ImageTemp(i-1,j)->Red = ImageTemp(i+1,j)->Red =
-							ImageTemp(i-1,j+1)->Red = ImageTemp(i,j+1)->Red = ImageTemp(i+1,j+1)->Red = 255;
+			mMoveCommand.motion_cmd=Motion::MOTION_WALK_TROT;
+			mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
+			mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
+			mMoveCommand.head_lookat=vector3d(150,0,50);
+			mMoveCommand.vx = 100;
+			mMoveCommand.vy = 0;
+			mMoveCommand.va = 0.05;
+			subject[sbjMotionControl]->SetData(&mMoveCommand,sizeof(Motion::MotionCommand));
+			subject[sbjMotionControl]->NotifyObservers();
+			Wait(static_cast<longword>(2000000000));
+		}
+		else
+		{
+			mMoveCommand.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+			mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
+			mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
+			mMoveCommand.head_lookat=vector3d(150,0,50);
+			subject[sbjMotionControl]->SetData(&mMoveCommand,sizeof(Motion::MotionCommand));
+			subject[sbjMotionControl]->NotifyObservers();
 
-					ImageTemp(i-1,j-1)->Green = ImageTemp(i,j-1)->Green = ImageTemp(i+1,j-1)->Green =
-						ImageTemp(i-1,j)->Green = ImageTemp(i+1,j)->Green =
-							ImageTemp(i-1,j+1)->Green = ImageTemp(i,j+1)->Green = ImageTemp(i+1,j+1)->Green = 255;
-
-					ImageTemp(i-1,j-1)->Blue = ImageTemp(i,j-1)->Blue = ImageTemp(i+1,j-1)->Blue =
-						ImageTemp(i-1,j)->Blue = ImageTemp(i+1,j)->Blue =
-							ImageTemp(i-1,j+1)->Blue = ImageTemp(i,j+1)->Blue = ImageTemp(i+1,j+1)->Blue = 255;
-				}
-			}
+			Wait(static_cast<longword>(2000000000));
 		}
 
-		// copio ImageTemp in Image
-		RangedPixelToPixelCopy( ImageTemp, 0, ImageTemp.TellWidth(), ImageTemp.TellHeight(), 0, Image, 0, 0 );
 
-		// seconda passata - erosione
-		// se un pixel ha colore NON target, coloro i pixel adiacenti dello stesso colore
-		for( int i=1 ; i < Image.TellWidth()-1 ; i++)
-		{
-			for( int j=1 ; j < Image.TellHeight()-1 ; j++)
-			{
-				if (Image(i,j)->Red == 0)
-				{
-					ImageTemp(i-1,j-1)->Red = ImageTemp(i,j-1)->Red = ImageTemp(i+1,j-1)->Red =
-						ImageTemp(i-1,j)->Red = ImageTemp(i+1,j)->Red =
-							ImageTemp(i-1,j+1)->Red = ImageTemp(i,j+1)->Red = ImageTemp(i+1,j+1)->Red = 0;
-
-					ImageTemp(i-1,j-1)->Green = ImageTemp(i,j-1)->Green = ImageTemp(i+1,j-1)->Green =
-						ImageTemp(i-1,j)->Green = ImageTemp(i+1,j)->Green =
-							ImageTemp(i-1,j+1)->Green = ImageTemp(i,j+1)->Green = ImageTemp(i+1,j+1)->Green = 0;
-
-					ImageTemp(i-1,j-1)->Blue = ImageTemp(i,j-1)->Blue = ImageTemp(i+1,j-1)->Blue =
-						ImageTemp(i-1,j)->Blue = ImageTemp(i+1,j)->Blue =
-							ImageTemp(i-1,j+1)->Blue = ImageTemp(i,j+1)->Blue = ImageTemp(i+1,j+1)->Blue = 0;
-				}
-			}
-		}
-
-		// copio ImageTemp in Image
-		RangedPixelToPixelCopy( ImageTemp, 0, ImageTemp.TellWidth(), ImageTemp.TellHeight(), 0, Image, 0, 0 );
-
-		// terza passata
-		// riempio le regioni "vuote" scorrendo sulle colonne
-
-		int start, p;
-
-		for( int j=0 ; j < Image.TellHeight() ; j++)
-		{
-			for( int i=0 ; i < Image.TellWidth() ; i++)
-			{
-				if (Image(i,j)->Red == 255)
-				{
-					p = i+1;
-					start = p;
-					while((Image(p,j)->Red == 0) && (p < Image.TellWidth()-1))
-					{
-						p++;
-					}
-					if (p-i > 10)
-						p = start;
-					while( p > i )
-					{
-						ImageTemp(p-1,j)->Red   = (BYTE) 255;
-						ImageTemp(p-1,j)->Green = (BYTE) 255;
-						ImageTemp(p-1,j)->Blue  = (BYTE) 255;
-						p--;
-					}
-				}
-			}
-		}
-
-		// write the output file
-		sprintf(name, "/MS/OPEN-R/MW/DATA/P/LAYC%d_rg.BMP", count);
-		ImageTemp.WriteToFile( name );
-
-
-		// calcolo della distanza in mm
-		int bhMin, bhMax, bwMin, bwMax, ballHeight, ballWidth;
-		float f, ballDim, realBallDim, dist;
-
-		bhMin = ImageTemp.TellHeight() - 1;
-		bwMin = ImageTemp.TellWidth() - 1;
-		bhMax = 0;
-		bwMax = 0;
-
-		for( int j=0 ; j < Image.TellHeight() ; j++)
-		{
-			for( int i=0 ; i < Image.TellWidth() ; i++)
-			{
-				if (ImageTemp(i,j)->Red == 255)
-				{
-					if (j > bhMax)
-						bhMax = j;
-					if (j < bhMin)
-						bhMin = j;
-					if (i > bwMax)
-						bwMax = i;
-					if (i < bwMin)
-						bwMin = i;
-				}
-			}
-		}
-
-		ballHeight = bhMax - bhMin;
-		ballWidth = bwMax - bwMin;
-		ballDim = (ballHeight + ballWidth) * 0.5;
-
-		OSYSDEBUG(("%d x %d\ndiametro palla img = %d pixel | ", ballWidth, ballHeight, (int)ballDim));
-
-		f = 3.27f;   // focale
-		realBallDim = 70.0f;   // diametro della palla reale in mm
-		ballDim = 0.0352f * ballDim;   // conversione della dimensione da pixel a mm
-		dist = (f * realBallDim) / ballDim;
-
-		OSYSDEBUG(("%f mm\ndistanza dalla palla = %f mm\n", ballDim, dist));
-*/
-
-		//
-		// Mando il comando di movimento.
-		//
-		//      subject[sbjMotionControl]->SetData(&mMoveCommand,sizeof(Motion::MotionCommand));
-		//      subject[sbjMotionControl]->NotifyObservers();
-
-		//
-		// Aspetto 1 secondo.
-		//
-		Wait(static_cast<longword>(1000000000));
-		count++;
-		//
-		// Mando il comando di riposo
-		//
-		//subject[sbjMotionControl]->SetData(&mStandCommand,sizeof(Motion::MotionCommand));
-		//subject[sbjMotionControl]->NotifyObservers();
+		i++;
 	}
 
-	//
-	// Faccio ripartire il timer.
-	//
-	int dummy=0;
-	EventID sincroEvent = EventID();
-	RelativeTime period(0, 200);
-	TimeEventInfoWithRelativeTime timeInfo(TimeEventInfo::NonPeriodic, period);
-	sError error=SetTimeEvent(&timeInfo,myOID_,Extra_Entry[entryTimerEnd],&dummy,sizeof(dummy),&sincroEvent);
-	if(error!=sSUCCESS)
-		OSYSLOG1((osyslogERROR, "::DoStart() : ERROR: Sincronization Timer not started\n"));
-	OSYSDEBUG(("ESCO DAL TIMER\n"));
 }
 
 /** Funzione invocata al ricevimento di un Assert Ready da parte di
@@ -627,36 +475,7 @@ GeneraMove::InsideTrack(OFbkImageVectorData* imageVec, int topLine, int linesToC
 	return isInside;
 }
 
-void
-GeneraMove::Minefield()
-{
-
-}
-
-void
-GeneraMove::CalcGrid(int** pix_count, int thrs, int width, int height)
-{
-	int step_x = width/grids_x;
-	int step_y = height/grids_y;
-
-	int x_rett = 0;
-	int y_rett = 0;
-
-	int grid_matrix[grids_x][grids_y];
-
-	for (int x=0; x<grids_x; x++)
-	{
-		for (int y=0; y<grids_y; y++)
-		{
-			if (pix_count[x][y] > thrs)
-				grid_matrix[x][y] = 0;
-			else
-				grid_matrix[x][y] = 100;
-		}
-	}
-}
-
-void
+int**
 GeneraMove::Grid(OFbkImageVectorData* imageVec)
 {
 	OFbkImageInfo* info = imageVec->GetInfo(ofbkimageLAYER_C);
@@ -669,7 +488,11 @@ GeneraMove::Grid(OFbkImageVectorData* imageVec)
 	int m = 0;
 	int n = 0;
 	int pix_count[grids_x][grids_y];
-	int grid_matrix[grids_x][grids_y];
+	int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
+	for (int i=0; i<grids_x; i++)
+	{
+		grid_matrix[i] = (int*) calloc(grids_y, sizeof(int));
+	}
 	int thrs = 150;
 
 	int x, y;
@@ -720,17 +543,18 @@ GeneraMove::Grid(OFbkImageVectorData* imageVec)
                     grid_matrix[x][y+1]+=1;
                 if ((x+1 < grids_x) && (y+1 < grids_y) && (grid_matrix[x+1][y+1] != 100))
                     grid_matrix[x+1][y+1]+=1;
-                if ((y-1 > 0) && (x-1 > 0) && (grid_matrix[x-1][y-1] != 100))
+                if ((y-1 >= 0) && (x-1 > 0) && (grid_matrix[x-1][y-1] != 100))
                     grid_matrix[x-1][y-1]+=1;
-                if ((y-1 > 0) && (grid_matrix[x][y-1] != 100))
+                if ((y-1 >= 0) && (grid_matrix[x][y-1] != 100))
                     grid_matrix[x][y-1]+=1;
-                if ((x-1 > 0) && (grid_matrix[x-1][y] != 100))
+                if ((x-1 >= 0) && (grid_matrix[x-1][y] != 100))
                     grid_matrix[x-1][y]+=1;
-                if ((y-1 > 0) && (x+1 < grids_x) && (grid_matrix[x+1][y-1] != 100))
+                if ((y-1 >= 0) && (x+1 < grids_x) && (grid_matrix[x+1][y-1] != 100))
                     grid_matrix[x+1][y-1]+=1;
-                if ((x-1 > 0) && (y+1 < grids_y) && (grid_matrix[x-1][y+1] != 100))
+                if ((x-1 >= 0) && (y+1 < grids_y) && (grid_matrix[x-1][y+1] != 100))
                     grid_matrix[x-1][y+1]+=1;
 			}
 		}
 	}
+	return grid_matrix;
 }

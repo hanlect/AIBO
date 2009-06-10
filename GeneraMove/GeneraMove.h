@@ -50,7 +50,7 @@ public:
 	void Ready(const OReadyEvent& event);
 
 	/** Extra Entry Ponit: invocata allo scadere del timer.*/
-	void TimerEnd(void* msg);
+	void Walk();
 
 	/** Gets Camera Frame */
 	void GetCamera(const ONotifyEvent& event);
@@ -59,9 +59,7 @@ public:
 	void SetCdtVectorData();
 	void RegionGrowing(OFbkImageVectorData* imageVec);
 	bool InsideTrack(OFbkImageVectorData* imageVec, int topLine, int linesToCheck);
-	void Minefield();
-	void CalcGrid(int** pix_count, int thrs, int grids_x, int grids_y);
-	void Grid(OFbkImageVectorData* imageVec);
+	int** Grid(OFbkImageVectorData* imageVec);
 
 private:
 	/** Oggetto per la gestione della primitiva del sensore di tatto
@@ -70,9 +68,8 @@ private:
 	OPrimitiveID fbkID;
 
 	/** Movimento "tira la palla con la testa a sinistra".*/
-	Motion::MotionCommand mMoveCommand;
 	/** Movimento riposo.*/
-	//Motion::MotionCommand mStandCommand;
+
 	// Cammina
 	//Motion::MotionCommand mWalkCommand;
 
