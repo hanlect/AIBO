@@ -5,8 +5,6 @@
 
 #include "entry.h"
 #include "../Motion/MotionInterface.h"
-//#include "EasyBMP.h"
-//#include "EasyBMP_BMP.h"
 #include <iostream>
 #include <fstream>
 #include <math.h>
@@ -20,16 +18,6 @@ int grids_y = 4;
 
 
 GeneraMove::GeneraMove(){
-
-	//
-	// Comando di movimento
-	//
-	/*memset(&mMoveCommand, 0, sizeof(mMoveCommand));
-	//mMoveCommand.motion_cmd=Motion::MOTION_KICK_HEAD_L;
-	mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
-	mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
-
-	mMoveCommand.head_lookat=vector3d(200,0,50);*/
 	sph = 1;
 	imageVec = NULL;
 	fbkID = oprimitiveID_UNDEF;
@@ -123,7 +111,15 @@ void GeneraMove::Walk()
 	while (i < 10)
 	{
 		int** grid_matrix = Grid(imageVec);
-
+		
+		// solo per testare momentaneamente
+		if (i == 0){
+		  grid_matrix[3][1] = 2;
+		}
+		else{
+		  grid_matrix[3][1] = 4;
+		} // fine test momentaneo, poi eliminare
+		    
 		if (grid_matrix[3][1] < 3)
 		  {
 		    Motion::MotionCommand command;
