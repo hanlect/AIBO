@@ -6,7 +6,7 @@
 #include <OPENR/RCRegion.h>
 #include <OPENR/OFbkImage.h>
 #include "def.h"
-#include "BMP.h"
+//#include "BMP.h"
 #include "R_list.h"
 
 // Contiene le costanti di gestione del movimento di motion.
@@ -80,8 +80,6 @@ private:
 	int sph;
 	int count;
 
-	//* BMP Writer */
-	BMP* mBMP;
 };
 
 #endif

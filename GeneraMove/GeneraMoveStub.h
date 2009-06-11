@@ -34,7 +34,6 @@ extern "C" {
     StubFuncDeclare_Basic(Destroy)
     StubFuncDeclare_Subject(0)
     StubFuncDeclare_Observer(0)
-    void _TimerEnd(void*);
 }
 
 #endif // _stub_h_DEFINED

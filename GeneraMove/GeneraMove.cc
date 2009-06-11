@@ -5,8 +5,8 @@
 
 #include "entry.h"
 #include "../Motion/MotionInterface.h"
-#include "EasyBMP.h"
-#include "EasyBMP_BMP.h"
+//#include "EasyBMP.h"
+//#include "EasyBMP_BMP.h"
 #include <iostream>
 #include <fstream>
 #include <math.h>
@@ -30,22 +30,8 @@ GeneraMove::GeneraMove(){
 	mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
 
 	mMoveCommand.head_lookat=vector3d(200,0,50);*/
-
-
-
-	//
-	// Comando per metterlo in posizione di riposo
-	//
-
-
-
-	// Cammina
-
-
-
 	sph = 1;
 	imageVec = NULL;
-	mBMP = new BMP();
 	fbkID = oprimitiveID_UNDEF;
 }
 
@@ -97,51 +83,14 @@ OStatus GeneraMove::DoStart(const OSystemEvent& event){
 	ENABLE_ALL_SUBJECT;
 	ASSERT_READY_TO_ALL_OBSERVER;
 	count=0;
-	//
+
 	// Accendo i motori (per scrupolo)
-	//
 	OPENR::SetMotorPower(opowerON);
 
-	//
-	// Inclino la testa verso il basso
-	//
-	Wait(static_cast<longword>(2000000000));
-	Wait(static_cast<longword>(2000000000));
-	Wait(static_cast<longword>(2000000000));
-	Wait(static_cast<longword>(2000000000));
-	Wait(static_cast<longword>(2000000000));
-	Motion::MotionCommand mMoveCommand;
-	memset(&mMoveCommand, 0, sizeof(mMoveCommand));
-
-	mMoveCommand.motion_cmd=Motion::MOTION_WALK_TROT;
-	mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
-	mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
-	mMoveCommand.head_lookat=vector3d(150,0,50);
-	mMoveCommand.vx = 100;
-	mMoveCommand.vy = 0;
-	mMoveCommand.va = 0.05;
-	subject[sbjMotionControl]->SetData(&mMoveCommand,sizeof(Motion::MotionCommand));
-	subject[sbjMotionControl]->NotifyObservers();
-
-	Wait(static_cast<longword>(2000000000));
-	Wait(static_cast<longword>(2000000000));
-	Wait(static_cast<longword>(2000000000));
-	Wait(static_cast<longword>(2000000000));
-	Wait(static_cast<longword>(2000000000));
-
-
-	memset(&mMoveCommand, 0, sizeof(mMoveCommand));
-	mMoveCommand.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
-	mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
-	mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
-	mMoveCommand.head_lookat=vector3d(150,0,50);
-	subject[sbjMotionControl]->SetData(&mMoveCommand,sizeof(Motion::MotionCommand));
-	subject[sbjMotionControl]->NotifyObservers();
-
-	//Walk();
+	Walk();
 
 	return oSUCCESS;
-}  //DoStart() END
+} 
 
 
 /** Fermo la comunicazione inter-object.*/
@@ -153,7 +102,7 @@ OStatus GeneraMove::DoStop(const OSystemEvent& event){
 	OPENR::SetMotorPower(opowerOFF);
 
 	return oSUCCESS;
-}  //DoStop() END
+} 
 
 
 /** Distrutto le strutture di comunicazione inter-object.*/
@@ -165,43 +114,43 @@ OStatus GeneraMove::DoDestroy(const OSystemEvent& event){
 	return oSUCCESS;
 }  //DoDestroy() END
 
+
+
+
 void GeneraMove::Walk()
 {
-
-	Motion::MotionCommand mMoveCommand;
-	memset(&mMoveCommand, 0, sizeof(mMoveCommand));
 	int i = 0;
 	while (i < 10)
 	{
 		int** grid_matrix = Grid(imageVec);
 
-
-
 		if (grid_matrix[3][1] < 3)
-		{
-			mMoveCommand.motion_cmd=Motion::MOTION_WALK_TROT;
-			mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
-			mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
-			mMoveCommand.head_lookat=vector3d(150,0,50);
-			mMoveCommand.vx = 100;
-			mMoveCommand.vy = 0;
-			mMoveCommand.va = 0.05;
-			subject[sbjMotionControl]->SetData(&mMoveCommand,sizeof(Motion::MotionCommand));
-			subject[sbjMotionControl]->NotifyObservers();
-			Wait(static_cast<longword>(2000000000));
-		}
+		  {
+		    Motion::MotionCommand command;
+		    memset(&command, 0, sizeof(command));
+		    command.motion_cmd=Motion::MOTION_WALK_TROT;
+		    command.head_cmd=Motion::HEAD_LOOKAT;
+		    command.tail_cmd=Motion::TAIL_NO_CMD;
+		    command.head_lookat=vector3d(150,0,50);
+		    command.vx=100;
+		    command.vy=0;
+		    command.va=0.5;
+		    subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+		    subject[sbjMotionControl]->NotifyObservers();
+		    Wait(static_cast<longword>(2000000000));
+		  }
 		else
-		{
-			mMoveCommand.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
-			mMoveCommand.head_cmd=Motion::HEAD_LOOKAT;
-			mMoveCommand.tail_cmd=Motion::TAIL_NO_CMD;
-			mMoveCommand.head_lookat=vector3d(150,0,50);
-			subject[sbjMotionControl]->SetData(&mMoveCommand,sizeof(Motion::MotionCommand));
-			subject[sbjMotionControl]->NotifyObservers();
-
-			Wait(static_cast<longword>(2000000000));
-		}
-
+		  {
+		    Motion::MotionCommand command;
+		    memset(&command, 0, sizeof(command));
+		    command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+		    command.head_cmd=Motion::HEAD_LOOKAT;
+		    command.tail_cmd=Motion::TAIL_NO_CMD;
+		    command.head_lookat=vector3d(150,0,50);
+		    subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+		    subject[sbjMotionControl]->NotifyObservers();
+		    Wait(static_cast<longword>(2000000000));
+		  }
 
 		i++;
 	}

@@ -49,13 +49,6 @@ StubFuncDefine_Notify(0, GetCamera)
 //
 // Other definitions if any
 //
-extern "C" void
-_TimerEnd(void* msg)
-{
-    Self.TimerEnd(msg);
-    Return();
-}
-
 
 //
 // Set Entry Table
@@ -69,7 +62,6 @@ GEN_ENTRY(_controlstub0, 	_Control0);
 GEN_ENTRY(_readystub0, 	_Ready0);
 GEN_ENTRY(_connectstub0, 	_Connect0);
 GEN_ENTRY(_notifystub0, 	_Notify0);
-GEN_ENTRY(_TimerEndstub, 	_TimerEnd);
 GEN_ENTRY(PrologueEntry, Prologue);
 
 ObjectEntry	ObjectEntryTable[] = {
@@ -81,7 +73,6 @@ ObjectEntry	ObjectEntryTable[] = {
     {Entry_Ready[0], 	(Entry)_readystub0},
     {Entry_Connect[0], 	(Entry)_connectstub0},
     {Entry_Notify[0], 	(Entry)_notifystub0},
-    {Extra_Entry[0], 	(Entry)_TimerEndstub},
     {UNDEF,            (Entry) ENTRY_UNDEF}
 };
 #else
@@ -104,7 +95,6 @@ ObjectEntry  ObjectEntryTable[] = {
     {Entry_Ready[0], 	(Entry) _Ready(0)},
     {Entry_Connect[0], 	(Entry) _Connect(0)},
     {Entry_Notify[0], 	(Entry) _Notify(0)},
-    {Extra_Entry[0], 	(Entry) _TimerEnd},
     {UNDEF, 		(Entry) ENTRY_UNDEF}
 };
 #endif

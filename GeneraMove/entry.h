@@ -35,11 +35,4 @@ const Selector Entry_Notify [numOfObserver] = { 7 };
 //
 const longword numOfBasicEntries = 8;
 
-//
-// Extra entry
-//
-const Selector Extra_Entry[]  = { 8 };
-
-const int entryTimerEnd = 0;
-
 #endif // _entry_h_DEFINED

@@ -40,9 +40,8 @@ TARGET_MS=GENMOVE.BIN
 OBJ=$(TARGET_NAME)Stub.o \
 	$(TARGET_NAME).o \
 	$(TARGET_NAME).o \
-	./BMP.o \
 	./R_list.o \
-	./EasyBMP.o
+
 
 
  .PHONY: all install clean
