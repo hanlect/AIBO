@@ -16,9 +16,15 @@ typedef unsigned char BYTE;
 int grids_x = 4;
 int grids_y = 4;
 
+  /** Stati di Touched.*/
+  enum
+    {
+      IDLE, /**< Non so facendo nulla.*/
+      MOVING, /**< Mi sto muovendo.*/
+    } mState;
 
 GeneraMove::GeneraMove(){
-	sph = 1;
+	sph = 0;
 	imageVec = NULL;
 	fbkID = oprimitiveID_UNDEF;
 }
@@ -75,7 +81,22 @@ OStatus GeneraMove::DoStart(const OSystemEvent& event){
 	// Accendo i motori (per scrupolo)
 	OPENR::SetMotorPower(opowerON);
 
-	Walk();
+
+	Motion::MotionCommand command;
+	memset(&command, 0, sizeof(command));
+	command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+	command.head_cmd=Motion::HEAD_LOOKAT;
+	command.tail_cmd=Motion::TAIL_NO_CMD;
+	command.head_lookat=vector3d(150,0,50);
+
+	if (sph ==1){
+	  subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	  subject[sbjMotionControl]->NotifyObservers();
+
+	  sph=0;
+	}
+
+	//Walk();
 
 	return oSUCCESS;
 } 
@@ -107,6 +128,9 @@ OStatus GeneraMove::DoDestroy(const OSystemEvent& event){
 
 void GeneraMove::Walk()
 {
+	 	    Wait(static_cast<longword>(2000000000));
+  	OSYSDEBUG(("Entrato in walk\n"));
+	//int** grid_matrix = Grid(imageVec);
 	int i = 0;
 	while (i < 10)
 	{
@@ -157,14 +181,157 @@ void GeneraMove::Walk()
     Motion.*/
 void GeneraMove::Ready(const OReadyEvent& event){
 	OSYSDEBUG(("GeneraMove:: ricevuto Assert Ready\n"));
+	sph=1;
 }
 
 void GeneraMove::GetCamera(const ONotifyEvent& event) {
 
-	if(sph == 1) imageVec = (OFbkImageVectorData*)event.Data(0);
+        imageVec = (OFbkImageVectorData*)event.Data(0);
+        OFbkImageInfo* info = imageVec->GetInfo(ofbkimageLAYER_C);
+	byte*          data = imageVec->GetData(ofbkimageLAYER_C);
+
+	OFbkImage cdtImage(info, data, ofbkimageBAND_CDT);
+
+	int width = cdtImage.Width();
+	int height = cdtImage.Height();    
+	int m = 0;
+	int n = 0;
+	//int pix_count[grids_x][grids_y];
+	 int **pix_count = (int**) calloc(grids_x, sizeof(int*));
+	 int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
+	for (int i=0; i<grids_x; i++)
+	{
+		grid_matrix[i] = (int*) calloc(grids_y, sizeof(int));
+		pix_count[i] = (int*) calloc(grids_y, sizeof(int));
+	}
+	int thrs = 150;
+
+	int x, y;
+
+	for (x=0; x < width; x++)
+	{
+		for (y=0; y < height; y++)
+		{
+			if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)	// canale del grigio/pista
+			{
+				m = (int) floor( (float) (x * grids_x) / (float) width );
+				n = (int) floor( (float) (y * grids_y) / (float) height );
+				pix_count[m][n]++;
+			}
+		}
+	}
+
+	//calc_grid
+	//int step_x = width/grids_x;
+	//int step_y = height/grids_y;
+	//int x_rett = 0;
+	//int y_rett = 0;
+
+	for (x=0; x < grids_x; x++)
+	{
+		for (y=0; y < grids_y; y++)
+		{
+			if (pix_count[x][y] > thrs)
+				grid_matrix[x][y] = 0;
+			else
+				grid_matrix[x][y] = 100;
+		}
+	}
+
+	//OSYSDEBUG(("pix count davanti: %d\n", pix_count[3][1]));
+	//minefield
+	//int max_x = sizeof(grid_matrix[0]) / sizeof(int);
+	//int max_y = sizeof(grid_matrix) /sizeof(int);
+
+	for (y=0; y < grids_y; y++)
+	{
+		for (x=0; x < grids_x; x++)
+		{
+			if (grid_matrix[x][y] == 100)
+			{
+				if ((x+1 < grids_x) && (grid_matrix[x+1][y] != 100))
+					grid_matrix[x+1][y]+=1;
+                if ((y+1 < grids_y) && (grid_matrix[x][y+1] != 100))
+                    grid_matrix[x][y+1]+=1;
+                if ((x+1 < grids_x) && (y+1 < grids_y) && (grid_matrix[x+1][y+1] != 100))
+                    grid_matrix[x+1][y+1]+=1;
+                if ((y-1 >= 0) && (x-1 > 0) && (grid_matrix[x-1][y-1] != 100))
+                    grid_matrix[x-1][y-1]+=1;
+                if ((y-1 >= 0) && (grid_matrix[x][y-1] != 100))
+                    grid_matrix[x][y-1]+=1;
+                if ((x-1 >= 0) && (grid_matrix[x-1][y] != 100))
+                    grid_matrix[x-1][y]+=1;
+                if ((y-1 >= 0) && (x+1 < grids_x) && (grid_matrix[x+1][y-1] != 100))
+                    grid_matrix[x+1][y-1]+=1;
+                if ((x-1 >= 0) && (y+1 < grids_y) && (grid_matrix[x-1][y+1] != 100))
+                    grid_matrix[x-1][y+1]+=1;
+			}
+		}
+	}
+
+	OSYSDEBUG(("grid matrix davanti: %d\n", grid_matrix[3][1]));
+
+	 Motion::MotionCommand command;
+		    memset(&command, 0, sizeof(command));
+
+
+		    if (grid_matrix[3][1] < 3 && grid_matrix[2][1] < 3)
+		      {
+			OSYSDEBUG(("entrato IF: %d\n", grid_matrix[3][1]));
+
+			command.motion_cmd=Motion::MOTION_WALK_TROT;
+			command.head_cmd=Motion::HEAD_LOOKAT;
+			command.tail_cmd=Motion::TAIL_NO_CMD;
+			command.head_lookat=vector3d(150,0,50);
+			command.vx=100;
+			command.vy=0;
+			command.va=0.005;
+			if (sph ==1){
+			  subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+			  subject[sbjMotionControl]->NotifyObservers();
+			  sph=0;
+			}
+			Wait(static_cast<longword>(2000000000));
+		      }
+		    else if (grid_matrix[3][1] < 3 && grid_matrix[3][0] < 3)
+		      {
+			OSYSDEBUG(("entrato IF: %d\n", grid_matrix[3][1]));
+
+			command.motion_cmd=Motion::MOTION_WALK_TROT;
+			command.head_cmd=Motion::HEAD_LOOKAT;
+			command.tail_cmd=Motion::TAIL_NO_CMD;
+			command.head_lookat=vector3d(150,0,50);
+			command.vx=100;
+			command.vy=0;
+			command.va=0.835;
+			if (sph ==1){
+			  subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+			  subject[sbjMotionControl]->NotifyObservers();
+			  sph=0;
+			}
+			Wait(static_cast<longword>(1000000000));
+		      }
+		    else
+		      {
+			OSYSDEBUG(("entrato ELSE\n"));
+			command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+			command.head_cmd=Motion::HEAD_LOOKAT;
+			command.tail_cmd=Motion::TAIL_NO_CMD;
+			command.head_lookat=vector3d(150,0,50);
+			command.vx=0;
+			command.vy=0;
+			command.va=0;
+			if (sph ==1){
+			  subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+			  subject[sbjMotionControl]->NotifyObservers();
+			  sph=0;
+			}
+
+	}
+
+
 
 	observer[event.ObsIndex()]->AssertReady();
-
 }
 
 /** Funzione che setta i parametri della camera. */
@@ -423,6 +590,7 @@ GeneraMove::InsideTrack(OFbkImageVectorData* imageVec, int topLine, int linesToC
 int**
 GeneraMove::Grid(OFbkImageVectorData* imageVec)
 {
+  sph = 0;
 	OFbkImageInfo* info = imageVec->GetInfo(ofbkimageLAYER_C);
 	byte*          data = imageVec->GetData(ofbkimageLAYER_C);
 
@@ -433,7 +601,7 @@ GeneraMove::Grid(OFbkImageVectorData* imageVec)
 	int m = 0;
 	int n = 0;
 	int pix_count[grids_x][grids_y];
-	int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
+	 int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
 	for (int i=0; i<grids_x; i++)
 	{
 		grid_matrix[i] = (int*) calloc(grids_y, sizeof(int));
@@ -475,7 +643,7 @@ GeneraMove::Grid(OFbkImageVectorData* imageVec)
 	//minefield
 	//int max_x = sizeof(grid_matrix[0]) / sizeof(int);
 	//int max_y = sizeof(grid_matrix) /sizeof(int);
-
+	OSYSDEBUG(("Arrivato fino a Minefield"));
 	for (y=0; y < grids_y; y++)
 	{
 		for (x=0; x < grids_x; x++)
@@ -501,5 +669,6 @@ GeneraMove::Grid(OFbkImageVectorData* imageVec)
 			}
 		}
 	}
+	sph = 1;
 	return grid_matrix;
 }
